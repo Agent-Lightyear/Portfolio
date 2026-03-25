@@ -1,10 +1,15 @@
 document.addEventListener("DOMContentLoaded", () => {
   const prefersReducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false;
+  const pageLoader = document.getElementById("pageLoader");
+  let loaderRemoved = false;
+
+  if (pageLoader) document.body.classList.add("is-loading");
 
   const year = document.getElementById("year");
   if (year) year.textContent = String(new Date().getFullYear());
 
   initMobileNav();
+  initThemeToggle();
   initTypingEffect();
   initReveal();
   initSkillsAnimation();
@@ -12,6 +17,22 @@ document.addEventListener("DOMContentLoaded", () => {
   initProjectModal();
   initBackToTop();
   initContactForm();
+  initPageLoader();
+
+  function initPageLoader() {
+    if (!pageLoader) return;
+
+    function hideLoader() {
+      if (loaderRemoved) return;
+      loaderRemoved = true;
+      pageLoader.classList.add("is-hidden");
+      document.body.classList.remove("is-loading");
+      window.setTimeout(() => pageLoader.remove(), prefersReducedMotion ? 0 : 480);
+    }
+
+    window.addEventListener("load", hideLoader, { once: true });
+    window.setTimeout(hideLoader, prefersReducedMotion ? 0 : 220);
+  }
 
   function initMobileNav() {
     const toggle = document.querySelector(".nav-toggle");
@@ -86,6 +107,68 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     tick();
+  }
+
+  function initThemeToggle() {
+    const themeToggle = document.getElementById("themeToggle");
+    if (!themeToggle) return;
+
+    const icon = themeToggle.querySelector("i");
+    const label = themeToggle.querySelector("span");
+    const storageKey = "portfolio-theme";
+    const savedTheme = localStorage.getItem(storageKey);
+    const prefersLight = window.matchMedia?.("(prefers-color-scheme: light)")?.matches ?? false;
+    let switchAnimationTimeout = null;
+
+    function setTheme(isLightMode) {
+      document.body.classList.toggle("light-mode", isLightMode);
+      themeToggle.setAttribute("aria-pressed", String(isLightMode));
+      themeToggle.setAttribute("aria-label", isLightMode ? "Enable dark mode" : "Enable light mode");
+
+      if (label) label.textContent = isLightMode ? "Light" : "Dark";
+
+      if (icon) {
+        icon.classList.toggle("fa-sun", isLightMode);
+        icon.classList.toggle("fa-moon", !isLightMode);
+      }
+    }
+
+    function playThemeAnimation(nextIsLightMode) {
+      if (prefersReducedMotion) return;
+
+      const rect = themeToggle.getBoundingClientRect();
+      document.body.style.setProperty("--theme-flash-x", `${rect.left + rect.width / 2}px`);
+      document.body.style.setProperty("--theme-flash-y", `${rect.top + rect.height / 2}px`);
+      document.body.style.setProperty(
+        "--theme-flash-color",
+        nextIsLightMode ? "rgba(255, 248, 216, 0.38)" : "rgba(255, 44, 44, 0.26)",
+      );
+
+      document.body.classList.remove("theme-switching");
+      themeToggle.classList.remove("is-animating");
+
+      // Restart both animations cleanly on every click.
+      void document.body.offsetWidth;
+
+      document.body.classList.add("theme-switching");
+      themeToggle.classList.add("is-animating");
+
+      window.clearTimeout(switchAnimationTimeout);
+      switchAnimationTimeout = window.setTimeout(() => {
+        document.body.classList.remove("theme-switching");
+        themeToggle.classList.remove("is-animating");
+      }, 720);
+    }
+
+    const isLightMode = savedTheme ? savedTheme === "light" : prefersLight;
+    setTheme(isLightMode);
+
+    themeToggle.addEventListener("click", () => {
+      const nextIsLightMode = !document.body.classList.contains("light-mode");
+      playThemeAnimation(nextIsLightMode);
+      setTheme(nextIsLightMode);
+      localStorage.setItem(storageKey, nextIsLightMode ? "light" : "dark");
+    });
   }
 
   function initReveal() {
@@ -301,7 +384,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function isValidEmail(value) {
-      return /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(value);
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
     }
 
     fields.forEach((field) => field.addEventListener("input", () => clearError(field)));
