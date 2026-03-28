@@ -588,6 +588,24 @@ body.light-mode .outline:hover{
   transition:color 0.25s ease, transform 0.25s ease, text-shadow 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
 }
 
+.socials a i,
+.footer-socials a i{
+  display:block;
+  line-height:1;
+}
+
+.social-link.social-linkedin i{
+  font-size:18px;
+}
+
+.social-link.social-github i{
+  font-size:20px;
+}
+
+.social-link.social-x i{
+  font-size:18px;
+}
+
 .socials a:hover{
   color:var(--accent);
   transform:translateX(6px);
